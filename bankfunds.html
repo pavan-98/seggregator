@@ -23,11 +23,37 @@
 
       <section class="account-summary">
         <h2>Account Balance</h2>
-        <div class="balance">₹80,000.00</div>
+        <div class="balance-container">
+          <div class="balance">₹80,000.00</div>
+          <button class="edit-balance-btn" title="Edit Balance">
+            <i class="fas fa-edit"></i>
+          </button>
+        </div>
         <div class="chart-container">
           <canvas id="balanceChart"></canvas>
         </div>
       </section>
+
+      <!-- Modal for editing account balance -->
+      <div id="balanceModal" class="modal">
+        <div class="modal-content">
+          <span class="close-balance-modal">&times;</span>
+          <h2>Edit Account Balance</h2>
+          <form id="balanceForm">
+            <div class="form-group">
+              <label for="accountBalance">Account Balance (₹)</label>
+              <input
+                type="number"
+                id="accountBalance"
+                min="0"
+                step="100"
+                required
+              />
+            </div>
+            <button type="submit" class="btn-submit">Update Balance</button>
+          </form>
+        </div>
+      </div>
 
       <section class="segregated-funds">
         <h2>Segregated Funds</h2>
@@ -45,6 +71,14 @@
         <h2>Available Balance</h2>
         <div class="available">₹75,000.00</div>
         <p class="hint">This is what you can freely spend</p>
+        <div class="action-buttons">
+          <button id="randomDataBtn" class="action-btn random-btn">
+            <i class="fas fa-dice"></i> Random Data
+          </button>
+          <button id="resetSessionBtn" class="action-btn reset-btn">
+            <i class="fas fa-redo-alt"></i> Reset Session
+          </button>
+        </div>
       </section>
     </div>
 

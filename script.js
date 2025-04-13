@@ -1,5 +1,5 @@
-// Initial account data
-let accountData = {
+// Initial account data - used for reset functionality
+const defaultAccountData = {
     totalBalance: 80000,
     availableBalance: 75000,
     categories: [
@@ -18,6 +18,9 @@ let accountData = {
     ]
 };
 
+// Current account data (will be updated)
+let accountData = { ...defaultAccountData };
+
 // DOM Elements
 const categoriesContainer = document.querySelector('.categories');
 const addCategoryBtn = document.getElementById('addCategoryBtn');
@@ -25,21 +28,46 @@ const categoryModal = document.getElementById('categoryModal');
 const closeModalBtn = document.querySelector('.close-modal');
 const categoryForm = document.getElementById('categoryForm');
 const availableBalanceElement = document.querySelector('.available');
+const totalBalanceElement = document.querySelector('.balance');
 const modalTitle = document.getElementById('modalTitle');
 const submitBtn = document.getElementById('submitBtn');
 const editCategoryIndex = document.getElementById('editCategoryIndex');
 const categoryDateInput = document.getElementById('categoryDate');
+const editBalanceBtn = document.querySelector('.edit-balance-btn');
+const balanceModal = document.getElementById('balanceModal');
+const closeBalanceModalBtn = document.querySelector('.close-balance-modal');
+const balanceForm = document.getElementById('balanceForm');
+const accountBalanceInput = document.getElementById('accountBalance');
+const resetSessionBtn = document.getElementById('resetSessionBtn');
+const randomDataBtn = document.getElementById('randomDataBtn');
 
 // Chart instance
 let balanceChart;
 
+// Local storage key
+const STORAGE_KEY = 'seggregatorAppData';
+
 // Initialize the application
 function initialize() {
+    loadFromLocalStorage();
     renderCategories();
     initializeChart();
     setupEventListeners();
-    updateAvailableBalance();
+    updateBalanceDisplay();
     setDefaultDate();
+}
+
+// Save data to local storage
+function saveToLocalStorage() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(accountData));
+}
+
+// Load data from local storage
+function loadFromLocalStorage() {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+        accountData = JSON.parse(savedData);
+    }
 }
 
 // Set default date to 30 days from now
@@ -123,6 +151,39 @@ function prepareChartData() {
     colors.push('#4BC0C0');
     
     return { labels, data, colors };
+}
+
+// Update both total and available balance display
+function updateBalanceDisplay() {
+    totalBalanceElement.textContent = `₹${accountData.totalBalance.toLocaleString()}`;
+    availableBalanceElement.textContent = `₹${accountData.availableBalance.toLocaleString()}`;
+}
+
+// Open modal to edit account balance
+function openEditBalanceModal() {
+    accountBalanceInput.value = accountData.totalBalance;
+    balanceModal.style.display = 'block';
+}
+
+// Handle balance update
+function updateAccountBalance(newBalance) {
+    // Calculate the difference between old and new total balance
+    const balanceDifference = newBalance - accountData.totalBalance;
+    
+    // Update total balance
+    accountData.totalBalance = newBalance;
+    
+    // Update available balance (add the difference)
+    accountData.availableBalance += balanceDifference;
+    
+    // Update UI
+    updateBalanceDisplay();
+    
+    // Save to local storage
+    saveToLocalStorage();
+    
+    // Update chart
+    animateChartUpdate();
 }
 
 // Render category cards
@@ -209,16 +270,14 @@ function deleteCategory(index) {
         // Remove category
         accountData.categories.splice(index, 1);
         
+        // Save to local storage
+        saveToLocalStorage();
+        
         // Update UI
         renderCategories();
-        updateAvailableBalance();
+        updateBalanceDisplay();
         animateChartUpdate();
     }
-}
-
-// Update the available balance display
-function updateAvailableBalance() {
-    availableBalanceElement.textContent = `₹${accountData.availableBalance.toLocaleString()}`;
 }
 
 // Get used colors
@@ -279,6 +338,33 @@ function setupEventListeners() {
         if (event.target === categoryModal) {
             categoryModal.style.display = 'none';
         }
+        if (event.target === balanceModal) {
+            balanceModal.style.display = 'none';
+        }
+    });
+    
+    // Edit balance button event listener
+    editBalanceBtn.addEventListener('click', () => {
+        openEditBalanceModal();
+    });
+    
+    // Close balance modal when close button is clicked
+    closeBalanceModalBtn.addEventListener('click', () => {
+        balanceModal.style.display = 'none';
+    });
+    
+    // Balance form submission
+    balanceForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        
+        const newBalance = parseFloat(accountBalanceInput.value);
+        if (newBalance < getTotalAllocated()) {
+            alert(`Your new balance cannot be less than your total allocated amount (₹${getTotalAllocated().toLocaleString()})`);
+            return;
+        }
+        
+        updateAccountBalance(newBalance);
+        balanceModal.style.display = 'none';
     });
     
     // Handle form submission
@@ -335,9 +421,12 @@ function setupEventListeners() {
             accountData.availableBalance -= amount;
         }
         
+        // Save to local storage
+        saveToLocalStorage();
+        
         // Update UI
         renderCategories();
-        updateAvailableBalance();
+        updateBalanceDisplay();
         
         // Reset and close form
         categoryForm.reset();
@@ -349,6 +438,48 @@ function setupEventListeners() {
     
     // Filter colors when color dropdown is focused
     document.getElementById('categoryColor').addEventListener('focus', filterUsedColors);
+
+    // Reset session button event listener
+    resetSessionBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to reset the session? All data will be lost.')) {
+            accountData = { ...defaultAccountData };
+            saveToLocalStorage();
+            renderCategories();
+            updateBalanceDisplay();
+            animateChartUpdate();
+        }
+    });
+
+    // Random data generation button event listener
+    randomDataBtn.addEventListener('click', () => {
+        // Generate random categories
+        const randomCategories = generateRandomCategories();
+        
+        // Calculate total of all categories
+        const totalAllocated = randomCategories.reduce((sum, category) => sum + category.amount, 0);
+        
+        // Set a reasonable total balance (sum of categories + random available amount)
+        const randomAvailable = Math.floor(Math.random() * 10000) + 5000; // 5000-15000 random available balance
+        const newTotalBalance = totalAllocated + randomAvailable;
+        
+        // Update account data
+        accountData.categories = randomCategories;
+        accountData.totalBalance = newTotalBalance;
+        accountData.availableBalance = randomAvailable; // This is the correct available balance
+        
+        // Save to local storage
+        saveToLocalStorage();
+        
+        // Update UI
+        renderCategories();
+        updateBalanceDisplay();
+        animateChartUpdate();
+    });
+}
+
+// Get total allocated amount across all categories
+function getTotalAllocated() {
+    return accountData.categories.reduce((sum, category) => sum + category.amount, 0);
 }
 
 // Format date object to string (e.g., "April 15, 2025")
@@ -386,9 +517,6 @@ function animateChartUpdate() {
     balanceChart.data.datasets[0].data = chartData.data;
     balanceChart.data.datasets[0].backgroundColor = chartData.colors;
     
-    // Animate the specific segment that was added (the newest category)
-    const newCategoryIndex = accountData.categories.length - 1;
-    
     // Create a custom animation
     balanceChart.update('none'); // Update without animation first
     
@@ -405,6 +533,24 @@ function animateChartUpdate() {
             chartContainer.classList.remove('chart-animation');
         }, 500);
     }, 10);
+}
+
+// Generate random categories for testing
+function generateRandomCategories() {
+    const randomCategories = [];
+    const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#2ECC71', '#9966FF'];
+    const names = ['Food', 'Transport', 'Utilities', 'Movies', 'Misc'];
+    
+    for (let i = 0; i < 5; i++) {
+        const amount = Math.floor(Math.random() * 5000) + 1000;
+        const color = colors[i];
+        const name = names[i];
+        const date = getFormattedDate(Math.floor(Math.random() * 30) + 1);
+        
+        randomCategories.push({ name, amount, color, date });
+    }
+    
+    return randomCategories;
 }
 
 // Initialize the app when the DOM is fully loaded
