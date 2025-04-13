@@ -52,8 +52,9 @@
     <div id="categoryModal" class="modal">
       <div class="modal-content">
         <span class="close-modal">&times;</span>
-        <h2>Create New Category</h2>
+        <h2 id="modalTitle">Create New Category</h2>
         <form id="categoryForm">
+          <input type="hidden" id="editCategoryIndex" value="-1" />
           <div class="form-group">
             <label for="categoryName">Category Name</label>
             <input type="text" id="categoryName" required />
@@ -63,17 +64,28 @@
             <input type="number" id="categoryAmount" min="1" required />
           </div>
           <div class="form-group">
+            <label for="categoryDate">Date</label>
+            <input type="date" id="categoryDate" required />
+          </div>
+          <div class="form-group">
             <label for="categoryColor">Color</label>
             <select id="categoryColor">
               <option value="#FF6384">Red</option>
               <option value="#36A2EB">Blue</option>
               <option value="#FFCE56">Yellow</option>
-              <option value="#4BC0C0">Teal</option>
               <option value="#9966FF">Purple</option>
               <option value="#FF9F40">Orange</option>
+              <option value="#2ECC71">Green</option>
+              <option value="#E74C3C">Crimson</option>
+              <option value="#8E44AD">Violet</option>
+              <option value="#3498DB">Sky Blue</option>
+              <option value="#F1C40F">Gold</option>
+              <option value="#1ABC9C">Turquoise</option>
             </select>
           </div>
-          <button type="submit" class="btn-submit">Create Category</button>
+          <button type="submit" class="btn-submit" id="submitBtn">
+            Create Category
+          </button>
         </form>
       </div>
     </div>
